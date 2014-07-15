@@ -1,0 +1,26 @@
+<package>
+  <description brief="s3000_laser">
+
+     s3000
+
+  </description>
+  <author>Roberto</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/s3000_laser</url>
+  <depend package="roscpp"/>
+  <depend package="sensor_msgs"/>
+  <depend package="driver_base"/>
+  <depend package="self_test"/>
+  <depend package="diagnostic_updater"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="tf"/>
+  <depend package="std_srvs"/>
+  <export>
+        <cpp cflags="-I${prefix}/include -I${prefix}/msg_gen/cpp/include"/>
+  </export>
+
+
+</package>
+
+

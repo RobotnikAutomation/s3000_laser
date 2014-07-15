@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+  <param name="port" value="/dev/ttyUSB0" type="string"/>
+  <!-- param name="publish_tf" value="true" / -->
+  <node pkg="s3000_laser" type="s3000_laser" name="s3000_laser" output="screen" />
+</launch>
+
