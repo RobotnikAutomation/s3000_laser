@@ -9,6 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   tf
   message_generation
+  self_test
+  diagnostic_msgs
+  diagnostic_updater
 )
 
 ## System dependencies are found with CMake's conventions
