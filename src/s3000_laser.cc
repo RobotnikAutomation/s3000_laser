@@ -34,9 +34,7 @@
 #include "diagnostic_updater/DiagnosticStatusWrapper.h"
 
 #include "sensor_msgs/LaserScan.h"
-#include "std_srvs/Empty.h"
 
-#include "std_msgs/Bool.h"
 #include "tf/transform_broadcaster.h"
 #include "s3000_laser/enable_disable.h"
 
