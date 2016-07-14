@@ -85,15 +85,26 @@ public:
 	desired_freq_(20), 
 	freq_diag_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05))
 	{
+	    float angle_min_deg, angle_max_deg, angle_increment_deg;
+	    
 		ros::NodeHandle laser_node_handle(node_handle_, "s3000_laser");
 		private_node_handle_.param("port", port, string("/dev/ttyUSB1"));
 		private_node_handle_.param("baud_rate", baud_rate, 500000);
+		private_node_handle_.param<float>("range_min", reading.range_min, 0 );
+		private_node_handle_.param<float>("range_max", reading.range_max, 40 );
+		private_node_handle_.param<float>("angle_min", angle_min_deg, -100 );
+		private_node_handle_.param<float>("angle_max", angle_max_deg, 100 );
+		private_node_handle_.param<float>("angle_increment", angle_increment_deg, 0.25 );
 		private_node_handle_.param("topic_name", topic_name, string("/scan"));
 		private_node_handle_.param<bool> ("publish_tf", publish_tf_, false);
 		private_node_handle_.param<bool> ("publish_scan", publish_scan_, true);
 		laser_data_pub_ = laser_node_handle.advertise<sensor_msgs::LaserScan>(topic_name, 100);
 		running = false;
 		private_node_handle_.param("frame_id", frame_id_, string("/laser"));
+		
+		reading.angle_min = DTOR(angle_min_deg);
+		reading.angle_max = DTOR(angle_max_deg);
+		reading.angle_increment = DTOR(angle_increment_deg);
 		reading.header.frame_id = frame_id_;
 			
 		self_test_.add("Connect Test", this, &s3000node::ConnectTest);
