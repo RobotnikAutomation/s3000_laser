@@ -40,11 +40,6 @@
 #define NACK    0x92
 #define CRC16_GEN_POL 0x8005
 
-//! Converts degrees to radians
-double DTOR(double val){
-    return val*3.141592653589793/180.0;
-}
-
 /*!	\fn SickS3000::SickS3000()
  * 	\brief Public constructor
 */
@@ -179,35 +174,6 @@ void SickS3000::ReadLaser( sensor_msgs::LaserScan& scan, bool& bValidData ) // p
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-template<typename T>
-T swap_bytes( T val_in )
-{
-    T val_out;
-    int N = sizeof(val_in)-1;
-
-    char *bytes_in = (char*) &val_in, *bytes_out = (char*) &val_out;
-    for ( int i=0; i<=N; ++i ) bytes_out[i] = bytes_in[N-i];
-    
-    return val_out;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-uint32_t hex_to_int( const std::string& hex_str )
-{
-    uint32_t hex_val;
-    
-    std::stringstream ss;
-    ss << std::hex << hex_str;
-    ss >> hex_val;
-    
-    return hex_val;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
 int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
 {
   while(rx_count >= 22)
@@ -307,36 +273,36 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
 	  // Return this flag to let the node know that the message is ready to publish
 	  bValidData = true;
         }
-        else if (data[0] == 0xCC)
+        else if (data[0] == 0xCC && data[1] == 0xCC )
         {
-            static const int        REFLECTOR_COUNT_LEN    = 4;
-            static const int        REFLECTOR_DATA_LEN      = 8;
-            static const uint32_t   REFLECTOR_ANGLE_MASK    = 0xFFFF;
-            static const uint32_t   REFLECTOR_DISTANCE_MASK = 0x1FFF;
+            size_t read_pos=2; // start reading after 'CCCC' header
+            
+            uint16_t reflector_count = *reinterpret_cast<uint16_t*>( &data[read_pos] );
+            read_pos += sizeof(reflector_count);
 
-            ROS_WARN("We got a reflector data packet we dont know what to do with it\n");
-            std::string data_hex( data[0], 4 + REFLECTOR_DATA_LEN );
-            ROS_INFO("Reflector data: %s", data_hex.c_str() );
+            ROS_DEBUG_STREAM( "reflectors=" << reflector_count );
+            bValidData = ( reflector_count > 0 );
+
+            uint32_t reflector_data, num_ranges = ( scan.angle_max - scan.angle_min ) / scan.angle_increment;
+    
+            scan.header.stamp = ros::Time::now();
+            scan.ranges.resize( num_ranges, scan.range_min-1 );
+            scan.intensities.clear();  // not used
             
-            size_t data_pos=0;
-            
-            std::string reflector_count_hex( data[data_pos], REFLECTOR_COUNT_LEN );
-            uint16_t reflector_count = hex_to_int(reflector_count_hex);
-            reflector_count = swap_bytes(reflector_count);
-            
-            ROS_INFO("found %lu reflectors", reflector_count );
-            data_pos += REFLECTOR_COUNT_LEN;
-            
-            for ( size_t i=0; i< reflector_count; ++i, data_pos += REFLECTOR_DATA_LEN )
+            for ( size_t i=0; i< reflector_count; ++i )
             {
-                std::string reflector_data_hex( data[data_pos], REFLECTOR_DATA_LEN );
-                uint32_t reflector_data = hex_to_int(reflector_data_hex);
-                reflector_data = swap_bytes(reflector_data);
+                reflector_data = *reinterpret_cast<uint32_t*>( &data[read_pos] );
+                read_pos += sizeof(reflector_data);
                 
-                int angle_cdeg = reflector_data & REFLECTOR_ANGLE_MASK;
-                int dist_cm = ( reflector_data >> 16 ) & REFLECTOR_DISTANCE_MASK;
-                
-                ROS_INFO("reflector %lu: angle=%.2fdeg distance=%dcm", i, angle_cdeg/100.0, dist_cm );
+                int raw_angle = reflector_data & 0xFFFF; // read 16 bits
+                int raw_dist = ( reflector_data >> 16 ) & 0x1FFF; // read 13 bits
+                ROS_DEBUG("reflector %lu: angle=%.2fdeg distance=%.2fm", i, raw_angle*0.01, raw_dist*0.01 );
+
+                float scan_angle = scan.angle_max - DTOR(raw_angle*0.01);
+                int range_idx = ( scan_angle - scan.angle_min ) / scan.angle_increment;
+
+                if ( range_idx >= 0 && range_idx < scan.ranges.size() ) scan.ranges[range_idx] = raw_dist*0.01;
+                else ROS_WARN("invalid reflector angle=%.2frad, idx=%d/%lu", scan_angle, range_idx, scan.ranges.size() );
             }
         }
         else
