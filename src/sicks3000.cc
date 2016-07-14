@@ -48,7 +48,7 @@ double DTOR(double val){
 /*!	\fn SickS3000::SickS3000()
  * 	\brief Public constructor
 */
-SickS3000::SickS3000( std::string port )
+SickS3000::SickS3000( std::string port, int baudRate )
 {
   rx_count = 0;
   // allocate our recieve buffer
@@ -60,7 +60,7 @@ SickS3000::SickS3000( std::string port )
   mirror = 0;  // TODO move to property
 
   // Create serial port
-  serial= new SerialDevice(port.c_str(), S3000_DEFAULT_TRANSFERRATE, S3000_DEFAULT_PARITY, S3000_DEFAULT_DATA_SIZE); //Creates serial device
+  serial= new SerialDevice(port.c_str(), baudRate, S3000_DEFAULT_PARITY, S3000_DEFAULT_DATA_SIZE); //Creates serial device
 
   return;
 }
@@ -121,6 +121,22 @@ void SickS3000::SetScannerParams(sensor_msgs::LaserScan& scan, int data_count)
 
 		recognisedScanner = true;
 	}
+
+
+    if (data_count == 381) // sicks3000 0.5deg resolution
+    {
+        scan.angle_min  = static_cast<float> (DTOR(-95));
+        scan.angle_max  = static_cast<float> (DTOR(95));
+        scan.angle_increment =  static_cast<float> (DTOR(0.5));
+        scan.time_increment = (1.0/20.0) / 381.0; // Freq 20Hz
+        scan.scan_time = (1.0/20.0);
+        scan.range_min  =  0;
+        scan.range_max  =  49;   // check ?
+
+        recognisedScanner = true;
+    }
+
+
 
   if (data_count == 541) // sicks30b
   {

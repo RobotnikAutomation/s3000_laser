@@ -49,7 +49,7 @@ class SickS3000
   public:
 
     // Constructor
-    SickS3000( std::string port );
+    SickS3000( std::string port, int baudRate );
 
     // Destructor
     ~SickS3000();
