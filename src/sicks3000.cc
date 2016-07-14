@@ -176,6 +176,37 @@ void SickS3000::ReadLaser( sensor_msgs::LaserScan& scan, bool& bValidData ) // p
 	   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+template<typename T>
+T swap_bytes( T val_in )
+{
+    T val_out;
+    int N = sizeof(val_in)-1;
+
+    char *bytes_in = (char*) &val_in, *bytes_out = (char*) &val_out;
+    for ( int i=0; i<=N; ++i ) bytes_out[i] = bytes_in[N-i];
+    
+    return val_out;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+uint32_t hex_to_int( const std::string& hex_str )
+{
+    uint32_t hex_val;
+    
+    std::stringstream ss;
+    ss << std::hex << hex_str;
+    ss >> hex_val;
+    
+    return hex_val;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
 {
@@ -278,7 +309,35 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
         }
         else if (data[0] == 0xCC)
         {
-          ROS_WARN("We got a reflector data packet we dont know what to do with it\n");
+            static const int        REFLECTOR_COUNT_LEN    = 4;
+            static const int        REFLECTOR_DATA_LEN      = 8;
+            static const uint32_t   REFLECTOR_ANGLE_MASK    = 0xFFFF;
+            static const uint32_t   REFLECTOR_DISTANCE_MASK = 0x1FFF;
+
+            ROS_WARN("We got a reflector data packet we dont know what to do with it\n");
+            std::string data_hex( data[0], 4 + REFLECTOR_DATA_LEN );
+            ROS_INFO("Reflector data: %s", data_hex.c_str() );
+            
+            size_t data_pos=0;
+            
+            std::string reflector_count_hex( data[data_pos], REFLECTOR_COUNT_LEN );
+            uint16_t reflector_count = hex_to_int(reflector_count_hex);
+            reflector_count = swap_bytes(reflector_count);
+            
+            ROS_INFO("found %lu reflectors", reflector_count );
+            data_pos += REFLECTOR_COUNT_LEN;
+            
+            for ( size_t i=0; i< reflector_count; ++i, data_pos += REFLECTOR_DATA_LEN )
+            {
+                std::string reflector_data_hex( data[data_pos], REFLECTOR_DATA_LEN );
+                uint32_t reflector_data = hex_to_int(reflector_data_hex);
+                reflector_data = swap_bytes(reflector_data);
+                
+                int angle_cdeg = reflector_data & REFLECTOR_ANGLE_MASK;
+                int dist_cm = ( reflector_data >> 16 ) & REFLECTOR_DISTANCE_MASK;
+                
+                ROS_INFO("reflector %lu: angle=%.2fdeg distance=%dcm", i, angle_cdeg/100.0, dist_cm );
+            }
         }
         else
         {
