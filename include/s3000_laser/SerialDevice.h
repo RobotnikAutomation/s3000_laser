@@ -32,83 +32,35 @@
 #define __SERIALDEV_H
 	
 #include <stdio.h>
-
-#define SERIAL_OK				0
-#define SERIAL_ERROR				-2
-
-#define BUFFER					254
-#define DEFAULT_PORT 				"/dev/ttyS1"
-#define DEFAULT_TRANSFERRATE 			19200
-#define DEFAULT_PARITY 				"odd" //"even" "odd" "none"
-#define DEFAULT_SIZE_ARRAY			128
-#define DEFAULT_DATA_SIZE			7
+#include <string>
 
 class SerialDevice{
 
 private:	
-	/**
-		* File descriptor
-	*/
-	int fd;
-	//
-	bool bReady;	
-	//
-	unsigned char SendBuf[BUFFER];		
-	//
-	unsigned char RecBuf[BUFFER];
 	//Device's name
-	char cDevice[DEFAULT_SIZE_ARRAY];	
+	const std::string device_;	
 	//Parity for input and output: EVEN, ODD, NONE
-	char cParity[DEFAULT_SIZE_ARRAY];	
+	const std::string parity_;	
 	//BaudRate: 9600, 19200, 38400, 115200
-	int iBaudRate;
+	const int baudrate_;
 	//Character size mask. Values are CS5, CS6, CS7, or CS8.
-	int iBitDataSize;
-	//Entrada canónica-> La entrada canónica es orientada a línea. Los caracteres se meten en un buffer hasta recibir un CR o LF.
-	bool bCanon;
-	
+	const int datasize_;
+
+	int fd_; // File descriptor
+
 public:
-	// Public Constructor
-	SerialDevice(void);
-	// Public Constructor
 	SerialDevice(const char *device, int baudrate,const char *parity, int datasize);	
-	// Public Destructor
-	~SerialDevice(void);	
-	int OpenPort1(void);
-	int OpenPort2(void);
-	// Closes serial port
-	int ClosePort();
-	// Receive commands from SerialDevice
-	// @return number of read bytes
-	int ReceiveMessage(char *msg);
-	// Send commands to the SerialDevice
-	// @return number of sent bytes 
- 	int SendMessage(char *msg, int length);
-	//int SendMessage(char *msg);	
-	int WritePort(char *chars, int length);
-	int WritePort(char *chars, int *written_bytes, int length);	// Importat del SerialDevice amb Component	
-	int ReadPort(char *result);	
-	int ReadPort(char *result, int num_bytes);
-	int ReadPort(char *result, int *read_bytes, int num_bytes);  	// Importat del SerialDevice amb Component
-	//! Clean port buffer
-	int Flush();	
-	//! Returns opened device
-	char *GetDevice();
-	//! Sets the Canonical input. False by default
-	void SetCanonicalInput(bool value);
+	virtual ~SerialDevice();
+	
+	bool OpenPort();
+	bool ClosePort();
+	bool ReadPort( char *result, int bytes_to_read, int &bytes_read );
+
+	const char* GetDevice() const { return device_.c_str(); }
 	
 private:
-	
-	/**
-		* Set serial communication speed.
-		* Valid values: 9600, 19200, 38400, 115200
-		* @return SERIALDEV_OK
-		* @return SERIALDEV_ERROR
-	*/	
-	int InitPort(void);
-	int GetBaud(void);
 	//!	Set serial communication speed.
-	int SetTermSpeed(int speed);
+	bool SetTermSpeed(int speed);
 
 };
 
