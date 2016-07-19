@@ -40,15 +40,10 @@
 #define NACK    0x92
 #define CRC16_GEN_POL 0x8005
 
-//! Converts degrees to radians
-double DTOR(double val){
-    return val*3.141592653589793/180.0;
-}
-
 /*!	\fn SickS3000::SickS3000()
  * 	\brief Public constructor
 */
-SickS3000::SickS3000( std::string port )
+SickS3000::SickS3000( std::string port, int baudRate )
 {
   rx_count = 0;
   // allocate our recieve buffer
@@ -60,7 +55,7 @@ SickS3000::SickS3000( std::string port )
   mirror = 0;  // TODO move to property
 
   // Create serial port
-  serial= new SerialDevice(port.c_str(), S3000_DEFAULT_TRANSFERRATE, S3000_DEFAULT_PARITY, S3000_DEFAULT_DATA_SIZE); //Creates serial device
+  serial= new SerialDevice(port.c_str(), baudRate, S3000_DEFAULT_PARITY, S3000_DEFAULT_DATA_SIZE); //Creates serial device
 
   return;
 }
@@ -122,6 +117,22 @@ void SickS3000::SetScannerParams(sensor_msgs::LaserScan& scan, int data_count)
 		recognisedScanner = true;
 	}
 
+
+    if (data_count == 381) // sicks3000 0.5deg resolution
+    {
+        scan.angle_min  = static_cast<float> (DTOR(-95));
+        scan.angle_max  = static_cast<float> (DTOR(95));
+        scan.angle_increment =  static_cast<float> (DTOR(0.5));
+        scan.time_increment = (1.0/20.0) / 381.0; // Freq 20Hz
+        scan.scan_time = (1.0/20.0);
+        scan.range_min  =  0;
+        scan.range_max  =  49;   // check ?
+
+        recognisedScanner = true;
+    }
+
+
+
   if (data_count == 541) // sicks30b
   {
     // Scan configuration
@@ -160,6 +171,8 @@ void SickS3000::ReadLaser( sensor_msgs::LaserScan& scan, bool& bValidData ) // p
 	   }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 
 int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
 {
@@ -260,9 +273,38 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
 	  // Return this flag to let the node know that the message is ready to publish
 	  bValidData = true;
         }
-        else if (data[0] == 0xCC)
+        else if (data[0] == 0xCC && data[1] == 0xCC )
         {
-          ROS_WARN("We got a reflector data packet we dont know what to do with it\n");
+            size_t read_pos=2; // start reading after 'CCCC' header
+            
+            uint16_t reflector_count = *reinterpret_cast<uint16_t*>( &data[read_pos] );
+            read_pos += sizeof(reflector_count);
+
+            ROS_DEBUG_STREAM( "reflectors=" << reflector_count );
+            bValidData = ( reflector_count > 0 );
+
+            uint32_t reflector_data, num_ranges = ( scan.angle_max - scan.angle_min ) / scan.angle_increment;
+    
+            scan.header.stamp = ros::Time::now();
+            scan.ranges.resize( num_ranges );
+            std::fill( scan.ranges.begin(), scan.ranges.end(), scan.range_min-1 );
+            scan.intensities.clear();  // not used
+            
+            for ( size_t i=0; i< reflector_count; ++i )
+            {
+                reflector_data = *reinterpret_cast<uint32_t*>( &data[read_pos] );
+                read_pos += sizeof(reflector_data);
+                
+                int raw_angle = reflector_data & 0xFFFF; // read 16 bits
+                int raw_dist = ( reflector_data >> 16 ) & 0x1FFF; // read 13 bits
+                ROS_DEBUG("reflector %lu: angle=%.2fdeg distance=%.2fm", i, raw_angle*0.01, raw_dist*0.01 );
+
+                float scan_angle = scan.angle_max - DTOR(raw_angle*0.01);
+                int range_idx = ( scan_angle - scan.angle_min ) / scan.angle_increment;
+
+                if ( range_idx >= 0 && range_idx < scan.ranges.size() ) scan.ranges[range_idx] = raw_dist*0.01;
+                else ROS_WARN("invalid reflector angle=%.2frad, idx=%d/%lu", scan_angle, range_idx, scan.ranges.size() );
+            }
         }
         else
         {

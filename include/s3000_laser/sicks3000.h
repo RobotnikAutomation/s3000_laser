@@ -43,13 +43,18 @@
 #define S3000_DEFAULT_PARITY	   "none"
 #define S3000_DEFAULT_DATA_SIZE    8
 
+//! Converts degrees to radians
+inline double DTOR(double val){
+    return val*3.141592653589793/180.0;
+}
+
 // The laser device class.
 class SickS3000
 {
   public:
 
     // Constructor
-    SickS3000( std::string port );
+    SickS3000( std::string port, int baudRate );
 
     // Destructor
     ~SickS3000();
