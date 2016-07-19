@@ -286,7 +286,8 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
             uint32_t reflector_data, num_ranges = ( scan.angle_max - scan.angle_min ) / scan.angle_increment;
     
             scan.header.stamp = ros::Time::now();
-            scan.ranges.resize( num_ranges, scan.range_min-1 );
+            scan.ranges.resize( num_ranges );
+            std::fill( scan.ranges.begin(), scan.ranges.end(), scan.range_min-1 );
             scan.intensities.clear();  // not used
             
             for ( size_t i=0; i< reflector_count; ++i )

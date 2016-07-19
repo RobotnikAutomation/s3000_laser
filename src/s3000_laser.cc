@@ -98,7 +98,7 @@ public:
 		private_node_handle_.param("topic_name", topic_name, string("/scan"));
 		private_node_handle_.param<bool> ("publish_tf", publish_tf_, false);
 		private_node_handle_.param<bool> ("publish_scan", publish_scan_, true);
-		laser_data_pub_ = laser_node_handle.advertise<sensor_msgs::LaserScan>(topic_name, 100);
+		laser_data_pub_ = laser_node_handle.advertise<sensor_msgs::LaserScan>(topic_name, 1);
 		running = false;
 		private_node_handle_.param("frame_id", frame_id_, string("/laser"));
 		
