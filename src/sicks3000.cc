@@ -79,7 +79,7 @@ SickS3000::~SickS3000() {
 int SickS3000::Open(){
 
 	// Setup serial device
-	if (this->serial->OpenPort2() == SERIAL_ERROR) {
+	if (this->serial->OpenPort() == false) {
           ROS_ERROR("SickS3000::Open: Error Opening Serial Port");
 	  return -1;
           }
@@ -155,7 +155,7 @@ void SickS3000::ReadLaser( sensor_msgs::LaserScan& scan, bool& bValidData ) // p
 	char cReadBuffer[4000] = "\0";		// Max in 1 read
 
 	// Read controller messages
-	if (serial->ReadPort(cReadBuffer, &read_bytes, 2000)==-1) {
+	if (serial->ReadPort(cReadBuffer, 2000, read_bytes)==false) {
 	    ROS_ERROR("SickS3000::ReadLaser: Error reading port");
 	    }
 
