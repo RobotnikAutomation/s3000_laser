@@ -50,7 +50,7 @@ private:
 
 public:
 	SerialDevice(const char *device, int baudrate,const char *parity, int datasize);	
-	~SerialDevice() {}
+	virtual ~SerialDevice();
 	
 	bool OpenPort();
 	bool ClosePort();

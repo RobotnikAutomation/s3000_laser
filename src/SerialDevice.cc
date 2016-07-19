@@ -56,6 +56,14 @@ SerialDevice::SerialDevice(const char *device, int baudrate, const char *parity,
 	    << " BaudRate=" << baudrate );
 }
 
+/*! \fn SerialDevice::~SerialDevice()
+ 	* Destructor by default
+*/
+SerialDevice::~SerialDevice() 
+{
+    ClosePort();
+}
+
 /*! \fn int SerialDevice::OpenPort2(char *dev)
  	* Opens serial port for communication
 */
