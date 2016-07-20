@@ -85,6 +85,8 @@ public:
 	desired_freq_(20), 
 	freq_diag_(diagnostic_updater::FrequencyStatusParam(&desired_freq_, &desired_freq_, 0.05))
 	{
+	    int serial_datasize;
+	    string serial_parity;
 	    float angle_min_deg, angle_max_deg, angle_increment_deg;
 	    
 		ros::NodeHandle laser_node_handle(node_handle_, "s3000_laser");
@@ -98,6 +100,8 @@ public:
 		private_node_handle_.param("topic_name", topic_name, string("/scan"));
 		private_node_handle_.param<bool> ("publish_tf", publish_tf_, false);
 		private_node_handle_.param<bool> ("publish_scan", publish_scan_, true);
+		private_node_handle_.param<int> ("serial_datasize", serial_datasize, 8);
+		private_node_handle_.param<string> ("serial_parity", serial_parity, "none");
 		laser_data_pub_ = laser_node_handle.advertise<sensor_msgs::LaserScan>(topic_name, 1);
 		running = false;
 		private_node_handle_.param("frame_id", frame_id_, string("/laser"));
@@ -118,7 +122,7 @@ public:
 		enable_disable_srv_ = private_node_handle_.advertiseService("enable_disable",  &s3000node::EnableDisable, this);
 		
 		// Create SickS3000 in the given port
-		laser = new SickS3000( port, baud_rate );
+		laser = new SickS3000( port, baud_rate, serial_parity, serial_datasize );
 	}
 
 	~s3000node()

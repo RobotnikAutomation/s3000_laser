@@ -54,16 +54,16 @@ class SickS3000
   public:
 
     // Constructor
-    SickS3000( std::string port, int baudRate );
+    SickS3000( std::string port, int baudrate, std::string parity, int datasize );
 
     // Destructor
     ~SickS3000();
 
     //! Open the port
-    int Open();
+    bool Open();
 
     //! Close the port
-    int Close();
+    bool Close();
 
     //! Read and process data
     void ReadLaser( sensor_msgs::LaserScan& scan_msg, bool& bValidData ); // public periodic function
@@ -75,31 +75,14 @@ class SickS3000
     int ProcessLaserData( sensor_msgs::LaserScan& scan_msg, bool& bValidData ); // public periodic function
 
     // Calculates CRC for a telegram
-    unsigned short CreateCRC(uint8_t *data, ssize_t len);
-
-    // Get the time (in ms)
-    int64_t GetTime();
+    static unsigned short CreateCRC(uint8_t *data, ssize_t len);
 
     void SetScannerParams(sensor_msgs::LaserScan& scan, int data_count);
 
   protected:
 
     // serial port
-    SerialDevice* serial;
-
-    // Defines if laser is mounted inverted
-    int mirror;
-
-    // Scan width and resolution.
-    int scan_width, scan_res;
-
-    // Start and end scan angles (for restricted scan).  These are in
-    // units of 0.01 degrees.
-    int min_angle, max_angle;
-
-    // Start and end scan segments (for restricted scan).  These are
-    // the values used by the laser.
-    int scan_min_segment, scan_max_segment;
+    SerialDevice serial;
 
     bool recognisedScanner;
 
@@ -107,9 +90,6 @@ class SickS3000
     uint8_t * rx_buffer;
     unsigned int rx_buffer_size;
     unsigned int rx_count;
-
-    // sensor_msgs::LaserScan scan;
-
-  };
+};
 
 

@@ -32,18 +32,11 @@
 // 1 second of data at 500kbaud
 #define DEFAULT_RX_BUFFER_SIZE 500*1024/8
 
-////////////////////////////////////////////////////////////////////////////////
-// Device codes
-
-#define STX     0x02
-#define ACK     0xA0
-#define NACK    0x92
-#define CRC16_GEN_POL 0x8005
-
 /*!	\fn SickS3000::SickS3000()
  * 	\brief Public constructor
 */
-SickS3000::SickS3000( std::string port, int baudRate )
+SickS3000::SickS3000( std::string port, int baudrate, std::string parity, int datasize )
+: serial( port.c_str(), baudrate, parity.c_str(), datasize )
 {
   rx_count = 0;
   // allocate our recieve buffer
@@ -52,22 +45,10 @@ SickS3000::SickS3000( std::string port, int baudRate )
   assert(rx_buffer);
 
   recognisedScanner = false;
-  mirror = 0;  // TODO move to property
-
-  // Create serial port
-  serial= new SerialDevice(port.c_str(), baudRate, S3000_DEFAULT_PARITY, S3000_DEFAULT_DATA_SIZE); //Creates serial device
-
-  return;
 }
 
-SickS3000::~SickS3000() {
-
-  // Close serial port
-  if (serial!=NULL) serial->ClosePort();
-
-  // Delete serial port
-  if (serial!=NULL) delete serial;
-
+SickS3000::~SickS3000() 
+{
   delete [] rx_buffer;
 }
 
@@ -76,16 +57,9 @@ SickS3000::~SickS3000() {
  * 	\returns -1 Error
  * 	\returns 0 Ok
 */
-int SickS3000::Open(){
-
-	// Setup serial device
-	if (this->serial->OpenPort() == false) {
-          ROS_ERROR("SickS3000::Open: Error Opening Serial Port");
-	  return -1;
-          }
-	ROS_INFO("SickS3000::Open: serial port opened at %s", serial->GetDevice());
-
-	return 0;
+bool SickS3000::Open()
+{
+    return serial.OpenPort();
 }
 
 /*!	\fn int SickS3000::Close()
@@ -93,10 +67,9 @@ int SickS3000::Open(){
  * 	\returns ERROR
  * 	\returns OK
 */
-int SickS3000::Close(){
-
-	if (serial!=NULL) serial->ClosePort();
-	return 0;
+bool SickS3000::Close()
+{
+    return serial.ClosePort();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -149,13 +122,12 @@ void SickS3000::SetScannerParams(sensor_msgs::LaserScan& scan, int data_count)
 }
 
 void SickS3000::ReadLaser( sensor_msgs::LaserScan& scan, bool& bValidData ) // public periodic function
-//void SickS3000::ReadLaser()
 {
 	int read_bytes=0;			// Number of received bytes
 	char cReadBuffer[4000] = "\0";		// Max in 1 read
 
 	// Read controller messages
-	if (serial->ReadPort(cReadBuffer, 2000, read_bytes)==false) {
+	if (serial.ReadPort(cReadBuffer, 2000, read_bytes)==false) {
 	    ROS_ERROR("SickS3000::ReadLaser: Error reading port");
 	    }
 
@@ -259,17 +231,10 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
             unsigned short Distance_CM = (*reinterpret_cast<unsigned short *> (&data[4 + 2*ii]));
             Distance_CM &= 0x1fff; // remove status bits
             double distance_m = static_cast<double>(Distance_CM)/100.0;
-            if (mirror == 1)
-            	scan.ranges[data_count - ii - 1] = static_cast<float> (distance_m); // Reverse order.
-            else
-		//scan.ranges.push_back( range );
-            	scan.ranges[ii] = static_cast<float> (distance_m);
+        	scan.ranges[ii] = static_cast<float> (distance_m);
           }
 
-          //ROS_INFO("scan.ranges  %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f %5.2f ", scan.ranges[200], scan.ranges[201], scan.ranges[202],
-          //      scan.ranges[203], scan.ranges[204], scan.ranges[205], scan.ranges[206], scan.ranges[207] );
-
-// CHECK
+        // CHECK
 	  // Return this flag to let the node know that the message is ready to publish
 	  bValidData = true;
         }
