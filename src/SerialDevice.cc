@@ -69,9 +69,9 @@ SerialDevice::~SerialDevice()
 */
 bool SerialDevice::OpenPort()
 {
-	fd_ = open(device_.c_str(),  O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK);
+	serial_port_ = open(device_.c_str(),  O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK);
 	
-	if( fd_ == -1 )
+	if( serial_port_ == -1 )
 	{
 		ROS_WARN( "Error opening serial device=%s", device_.c_str() );
 		return false;  // invalid device file	
@@ -79,7 +79,7 @@ bool SerialDevice::OpenPort()
 	
 	// set up comm flags
 	struct termios comms_flags;
-	memset(&comms_flags, 0,sizeof(termios));
+	memset( &comms_flags, 0, sizeof(termios) );
 	
 	switch(datasize_)
 	{
@@ -96,8 +96,8 @@ bool SerialDevice::OpenPort()
 			comms_flags.c_cflag = CS8 | CREAD;
 		    break;
 		default:
-			comms_flags.c_cflag = CS8 | CREAD;
-		    break;
+			ROS_WARN( "unsupported datasize=%d", datasize_ );
+		    return false;
 	}
 	
 	comms_flags.c_iflag = INPCK;
@@ -120,17 +120,14 @@ bool SerialDevice::OpenPort()
 	
 	comms_flags.c_lflag &= ~ICANON;	// TEST
 	
-	tcsetattr(fd_, TCSANOW, &comms_flags);
-	tcflush(fd_, TCIOFLUSH);
+	tcsetattr( serial_port_, TCSANOW, &comms_flags );
+	tcflush( serial_port_, TCIOFLUSH );
 		
-	if (SetTermSpeed(baudrate_) == false)
+	if ( SetTermSpeed(baudrate_) == false )
 	    return false;
 	
 	// Make sure queue is empty
-	tcflush(fd_, TCIOFLUSH);
-	usleep(1000);
-	tcflush(fd_, TCIFLUSH);
-	
+	tcflush( serial_port_, TCIOFLUSH );
 	return true;
 	
 }
@@ -140,21 +137,21 @@ bool SerialDevice::OpenPort()
 */
 bool SerialDevice::ClosePort()
 {
-	return close(fd_) == 0;
+	return close(serial_port_) == 0;
 }
 
-/*!	\fn int SerialDevice::ReadPort(char *result, int *bytes_read, int bytes_to_read)
+/*!	\fn int SerialDevice::ReadPort(char *buffer, int *bytes_read, int bytes_to_read)
  * @brief Reads serial port
- * @param result as char *, output buffer
+ * @param buffer as char *, output buffer
  * @param bytes_read as int, number of read bytes
  * @param bytes_to_read as *int, number of desired bytes to read
  * @return OK
  * @return NOT_INITIALIZED
  * @return ERROR
 */
-bool SerialDevice::ReadPort(char *result, int bytes_to_read, int &bytes_read ) 
+bool SerialDevice::ReadPort(char *buffer, int bytes_to_read, int &bytes_read ) 
 {
-	bytes_read = read( fd_, result, bytes_to_read );
+	bytes_read = read( serial_port_, buffer, bytes_to_read );
 
     if( bytes_read >= 0 ) 
     {
@@ -173,44 +170,44 @@ bool SerialDevice::ReadPort(char *result, int bytes_to_read, int &bytes_read )
 
 /*!	\fn int SerialDevice::SetTermSpeed(int speed)
 	* Set serial communication speed.
-	* Valid values: 9600, 19200, 38400, 115200
+	* Valid values: 9600, 19200, 38400, 115200, 500000
 	* @return false if error occured
 */
 bool SerialDevice::SetTermSpeed(int baudrate)
 {
-	int term_speed;
+	int baudrate_flag;
 	
 	switch(baudrate)
 	{
 		case 9600:
-			term_speed = B9600;
+			baudrate_flag = B9600;
 			break;
 		case 19200:
-			term_speed = B19200;
+			baudrate_flag = B19200;
 			break;
 		case 38400:
-			term_speed = B38400;
+			baudrate_flag = B38400;
 			break;
 		case 115200:
-			term_speed = B115200;
+			baudrate_flag = B115200;
 			break;
 		case 500000:
-			term_speed = B500000;
+			baudrate_flag = B500000;
 			break;
 		default:
 		    ROS_WARN("unsupported baudrate=%d", baudrate );
 			return false;
 	}
 	
-	struct termios term;
+	struct termios comms_flags;
 
-	if( tcgetattr( fd_, &term ) < 0 )
+	if( tcgetattr( serial_port_, &comms_flags ) < 0 )
 		return false;
 	
-	if( cfsetispeed( &term, term_speed ) < 0 || cfsetospeed( &term, term_speed ) < 0)
+	if( cfsetispeed( &comms_flags, baudrate_flag ) < 0 || cfsetospeed( &comms_flags, baudrate_flag ) < 0)
 		return false;
 	
-	if( tcsetattr( fd_, TCSAFLUSH, &term ) < 0 )
+	if( tcsetattr( serial_port_, TCSAFLUSH, &comms_flags ) < 0 )
 		return false;
 
 	return true;

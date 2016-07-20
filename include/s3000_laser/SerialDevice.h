@@ -34,19 +34,19 @@
 #include <stdio.h>
 #include <string>
 
-class SerialDevice{
-
+class SerialDevice
+{
 private:	
 	//Device's name
 	const std::string device_;	
 	//Parity for input and output: EVEN, ODD, NONE
 	const std::string parity_;	
-	//BaudRate: 9600, 19200, 38400, 115200
+	//BaudRate: 9600, 19200, 38400, 115200, 500000
 	const int baudrate_;
 	//Character size mask. Values are CS5, CS6, CS7, or CS8.
 	const int datasize_;
 
-	int fd_; // File descriptor
+	int serial_port_; // File descriptor
 
 public:
 	SerialDevice(const char *device, int baudrate,const char *parity, int datasize);	
