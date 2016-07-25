@@ -41,40 +41,40 @@
 #include <stropts.h>
 #include <ros/ros.h>
 
-/*! \fn SerialDevice::SerialDevice()
- 	* Constructor by default
-*/
-SerialDevice::SerialDevice(const char *device, int baudrate, const char *parity, int datasize)
-: device_( device )
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+SerialDevice::SerialDevice( const std::string& port, int baudrate, const std::string& parity, int datasize)
+: port_( port )
 , parity_( parity )
 , baudrate_( baudrate )
 , datasize_( datasize )
 {		
-	ROS_INFO_STREAM( "SerialDevice: " << device 
+	ROS_INFO_STREAM( "SerialDevice: " << port 
 	    << " Parity= " << parity 
 	    << " DataSize=" << datasize 
 	    << " BaudRate=" << baudrate );
 }
 
-/*! \fn SerialDevice::~SerialDevice()
- 	* Destructor by default
-*/
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 SerialDevice::~SerialDevice() 
 {
     ClosePort();
 }
 
-/*! \fn int SerialDevice::OpenPort2(char *dev)
- 	* Opens serial port for communication
-*/
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 bool SerialDevice::OpenPort()
 {
-	serial_port_ = open(device_.c_str(),  O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK);
+	serial_port_ = open( port_.c_str(),  O_RDWR | O_NOCTTY | O_NDELAY | O_NONBLOCK );
 	
 	if( serial_port_ == -1 )
 	{
-		ROS_WARN( "Error opening serial device=%s", device_.c_str() );
-		return false;  // invalid device file	
+		ROS_WARN( "Error opening serial port=%s", port_.c_str() );
+		return false;  // invalid port file	
 	}
 	
 	// set up comm flags
@@ -132,24 +132,18 @@ bool SerialDevice::OpenPort()
 	
 }
 
-/*! \fn int SerialDevice::ClosePort()
- 	* Closes serial port
-*/
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 bool SerialDevice::ClosePort()
 {
 	return close(serial_port_) == 0;
 }
 
-/*!	\fn int SerialDevice::ReadPort(char *buffer, int *bytes_read, int bytes_to_read)
- * @brief Reads serial port
- * @param buffer as char *, output buffer
- * @param bytes_read as int, number of read bytes
- * @param bytes_to_read as *int, number of desired bytes to read
- * @return OK
- * @return NOT_INITIALIZED
- * @return ERROR
-*/
-bool SerialDevice::ReadPort(char *buffer, int bytes_to_read, int &bytes_read ) 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+bool SerialDevice::ReadPort( char *buffer, int bytes_to_read, int &bytes_read ) 
 {
 	bytes_read = read( serial_port_, buffer, bytes_to_read );
 
@@ -168,11 +162,9 @@ bool SerialDevice::ReadPort(char *buffer, int bytes_to_read, int &bytes_read )
     }
 }
 
-/*!	\fn int SerialDevice::SetTermSpeed(int speed)
-	* Set serial communication speed.
-	* Valid values: 9600, 19200, 38400, 115200, 500000
-	* @return false if error occured
-*/
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
 bool SerialDevice::SetTermSpeed(int baudrate)
 {
 	int baudrate_flag;
@@ -212,4 +204,7 @@ bool SerialDevice::SetTermSpeed(int baudrate)
 
 	return true;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 

@@ -38,7 +38,7 @@ class SerialDevice
 {
 private:	
 	//Device's name
-	const std::string device_;	
+	const std::string port_;	
 	//Parity for input and output: EVEN, ODD, NONE
 	const std::string parity_;	
 	//BaudRate: 9600, 19200, 38400, 115200, 500000
@@ -49,15 +49,13 @@ private:
 	int serial_port_; // File descriptor
 
 public:
-	SerialDevice(const char *device, int baudrate,const char *parity, int datasize);	
+	SerialDevice( const std::string& port, int baudrate, const std::string& parity, int datasize );	
 	virtual ~SerialDevice();
 	
 	bool OpenPort();
 	bool ClosePort();
 	bool ReadPort( char *result, int bytes_to_read, int &bytes_read );
 
-	const char* GetDevice() const { return device_.c_str(); }
-	
 private:
 	//!	Set serial communication speed.
 	bool SetTermSpeed(int speed);

@@ -48,7 +48,7 @@ class SickS3000
   public:
 
     // Constructor
-    SickS3000( std::string port, int baudrate, std::string parity, int datasize );
+    SickS3000( const std::string port, int baudrate, const std::string parity, int datasize );
 
     // Destructor
     ~SickS3000();
@@ -65,28 +65,21 @@ class SickS3000
   private:
 
     // Process range data from laser
-    // int ProcessLaserData();
-    int ProcessLaserData( sensor_msgs::LaserScan& scan_msg, bool& bValidData ); // public periodic function
+    bool ParseLaserData( sensor_msgs::LaserScan& scan );
 
     // Calculates CRC for a telegram
     static unsigned short CreateCRC(const char *data, ssize_t len);
 
-    static bool SetScannerParams(sensor_msgs::LaserScan& scan, int data_count);
+    bool SetScannerParams(sensor_msgs::LaserScan& scan, int data_count);
 
   protected:
 
-    // serial port
     SerialDevice serial_;
-
     bool recognisedScanner;
-
-    // rx buffer
-    char* rx_buffer;
-    unsigned int rx_buffer_size;
-    unsigned int rx_count;
+    std::string rx_buffer_;
     
     static const size_t READ_BUFFER_SIZE=2000;
-    char read_buffer_[READ_BUFFER_SIZE];
+    char recv_buffer_[READ_BUFFER_SIZE];
 };
 
 
