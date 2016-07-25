@@ -36,12 +36,12 @@
  * 	\brief Public constructor
 */
 SickS3000::SickS3000( std::string port, int baudrate, std::string parity, int datasize )
-: serial( port.c_str(), baudrate, parity.c_str(), datasize )
+: serial_( port.c_str(), baudrate, parity.c_str(), datasize )
 {
   rx_count = 0;
   // allocate our recieve buffer
   rx_buffer_size = DEFAULT_RX_BUFFER_SIZE;
-  rx_buffer = new uint8_t[rx_buffer_size];
+  rx_buffer = new char[rx_buffer_size];
   assert(rx_buffer);
 
   recognisedScanner = false;
@@ -59,7 +59,7 @@ SickS3000::~SickS3000()
 */
 bool SickS3000::Open()
 {
-    return serial.OpenPort();
+    return serial_.OpenPort();
 }
 
 /*!	\fn int SickS3000::Close()
@@ -69,56 +69,59 @@ bool SickS3000::Open()
 */
 bool SickS3000::Close()
 {
-    return serial.ClosePort();
+    return serial_.ClosePort();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Set up scanner parameters based on number of results per scan
-void SickS3000::SetScannerParams(sensor_msgs::LaserScan& scan, int data_count)
+bool SickS3000::SetScannerParams(sensor_msgs::LaserScan& scan, int data_count)
 {
-	if (data_count == 761) // sicks3000
-	{
-		// Scan configuration
-		scan.angle_min  = static_cast<float> (DTOR(-95));
-		scan.angle_max  = static_cast<float> (DTOR(95));
-		scan.angle_increment =  static_cast<float> (DTOR(0.25));
-		scan.time_increment = (1.0/16.6) / 761.0;  //(((95.0+95.0)/0.25)+1.0);    // Freq 16.6Hz / 33.3Hz
-		scan.scan_time = (1.0/16.6);
-		scan.range_min  =  0;
-		scan.range_max  =  49;   // check ?
+    if (data_count == 761) // sicks3000
+    {
+        float freq_hz = 16.6;
 
-		recognisedScanner = true;
-	}
+        scan.angle_min          = deg_to_rad(-95);
+        scan.angle_max          = deg_to_rad(95);
+        scan.angle_increment    = deg_to_rad(0.25);
+        scan.scan_time          = 1.0 / freq_hz;
+        scan.time_increment     = scan.scan_time / data_count;
+        scan.range_min          = 0;
+        scan.range_max          = 49;   // check ?
 
+        return true;
+    }
 
     if (data_count == 381) // sicks3000 0.5deg resolution
     {
-        scan.angle_min  = static_cast<float> (DTOR(-95));
-        scan.angle_max  = static_cast<float> (DTOR(95));
-        scan.angle_increment =  static_cast<float> (DTOR(0.5));
-        scan.time_increment = (1.0/20.0) / 381.0; // Freq 20Hz
-        scan.scan_time = (1.0/20.0);
-        scan.range_min  =  0;
-        scan.range_max  =  49;   // check ?
+        float freq_hz = 20.0;
 
-        recognisedScanner = true;
+        scan.angle_min          = deg_to_rad(-95);
+        scan.angle_max          = deg_to_rad(95);
+        scan.angle_increment    = deg_to_rad(0.5);
+        scan.scan_time          = 1.0 / freq_hz;
+        scan.time_increment     = scan.scan_time / data_count;
+        scan.range_min          = 0;
+        scan.range_max          = 49;   // check ?
+
+        return true;
     }
 
+    if (data_count == 541) // sicks30b
+    {
+        float freq_hz = 12.7;
 
+        scan.angle_min          = deg_to_rad(-135);
+        scan.angle_max          = deg_to_rad(135);
+        scan.angle_increment    = deg_to_rad(0.5);
+        scan.scan_time          = 1.0 / freq_hz;
+        scan.time_increment     = scan.scan_time / data_count;
+        scan.range_min          = 0;
+        scan.range_max          = 40;   // check ? 30m in datasheet
 
-  if (data_count == 541) // sicks30b
-  {
-    // Scan configuration
-    scan.angle_min  = static_cast<float> (DTOR(-135));
-    scan.angle_max  = static_cast<float> (DTOR(135));
-    scan.angle_increment =  static_cast<float> (DTOR(0.5));
-    scan.time_increment = (1.0/12.7) / 541.0;  //(((135.0+135.0)/0.5)+1.0);    // Freq 12.7
-    scan.scan_time = (1.0/12.7);
-    scan.range_min  =  0;
-    scan.range_max  =  40;   // check ? 30m in datasheet
-
-    recognisedScanner = true;
-  }
+        return true;
+    }
+    
+    return false;
 }
 
 bool SickS3000::ReadLaser( sensor_msgs::LaserScan& scan )
@@ -126,7 +129,7 @@ bool SickS3000::ReadLaser( sensor_msgs::LaserScan& scan )
 	int bytes_read=0;			// Number of received bytes
 
 	// Read controller messages
-	if (serial.ReadPort(read_buffer_, 2000, bytes_read)==false) 
+	if (serial_.ReadPort(read_buffer_, READ_BUFFER_SIZE, bytes_read)==false) 
 	{
 	    ROS_ERROR("SickS3000::ReadLaser: Error reading port");
 	    return false;
@@ -135,7 +138,7 @@ bool SickS3000::ReadLaser( sensor_msgs::LaserScan& scan )
 	if (rx_count + bytes_read > rx_buffer_size) 
 	{
 	   ROS_WARN("S3000 Buffer Full");
-	   rx_count = 0;
+	   rx_count = 0; // clear buffer
 	   return false;
     }
 
@@ -155,7 +158,6 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
 {
   while(rx_count >= 22)
   {
-
     // find our continuous data header
     unsigned int ii;
     bool found = false;
@@ -169,6 +171,7 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
         break;
       }
     }
+
     if (!found)
     {
       memmove(rx_buffer, &rx_buffer[ii], rx_count-ii);
@@ -192,6 +195,7 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
     if (size > rx_count - 4)
       return 0;
 
+
     unsigned short packet_checksum = *reinterpret_cast<unsigned short *> (&rx_buffer[size+2]);
     unsigned short calc_checksum = CreateCRC(&rx_buffer[4], size-2);
     if (packet_checksum != calc_checksum)
@@ -200,9 +204,10 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
       memmove(rx_buffer, &rx_buffer[1], --rx_count);
       continue;
     }
+
     else
     {
-      uint8_t * data = &rx_buffer[20];
+      char * data = &rx_buffer[20];
       if (data[0] != data[1])
       {
         ROS_WARN("S3000: Bad type header bytes dont match");
@@ -269,7 +274,7 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
                 int raw_dist = ( reflector_data >> 16 ) & 0x1FFF; // read 13 bits
                 ROS_DEBUG("reflector %lu: angle=%.2fdeg distance=%.2fm", i, raw_angle*0.01, raw_dist*0.01 );
 
-                float scan_angle = scan.angle_max - DTOR(raw_angle*0.01);
+                float scan_angle = scan.angle_max - deg_to_rad(raw_angle*0.01);
                 int range_idx = ( scan_angle - scan.angle_min ) / scan.angle_increment;
 
                 if ( range_idx >= 0 && range_idx < scan.ranges.size() ) scan.ranges[range_idx] = raw_dist*0.01;
@@ -280,6 +285,7 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
         {
           ROS_WARN("We got an unknown packet\n");
         }
+
       }
     }
 
@@ -291,7 +297,8 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
 }
 
 
-static const unsigned short crc_table[256] = {
+static const unsigned short crc_table[256] = 
+{
   0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
   0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
   0x1231, 0x0210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
@@ -326,7 +333,7 @@ static const unsigned short crc_table[256] = {
   0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 };
 
-unsigned short SickS3000::CreateCRC(uint8_t *Data, ssize_t length)
+unsigned short SickS3000::CreateCRC(const char *Data, ssize_t length)
 {
   unsigned short CRC_16 = 0xFFFF;
   unsigned short i;

@@ -39,14 +39,8 @@
 #include <sensor_msgs/LaserScan.h>
 #include <s3000_laser/SerialDevice.h>
 
-#define S3000_DEFAULT_TRANSFERRATE 500000     //
-#define S3000_DEFAULT_PARITY	   "none"
-#define S3000_DEFAULT_DATA_SIZE    8
-
 //! Converts degrees to radians
-inline double DTOR(double val){
-    return val*3.141592653589793/180.0;
-}
+inline double deg_to_rad(double val) { return val*M_PI/180.0; }
 
 // The laser device class.
 class SickS3000
@@ -75,23 +69,24 @@ class SickS3000
     int ProcessLaserData( sensor_msgs::LaserScan& scan_msg, bool& bValidData ); // public periodic function
 
     // Calculates CRC for a telegram
-    static unsigned short CreateCRC(uint8_t *data, ssize_t len);
+    static unsigned short CreateCRC(const char *data, ssize_t len);
 
-    void SetScannerParams(sensor_msgs::LaserScan& scan, int data_count);
+    static bool SetScannerParams(sensor_msgs::LaserScan& scan, int data_count);
 
   protected:
 
     // serial port
-    SerialDevice serial;
+    SerialDevice serial_;
 
     bool recognisedScanner;
 
     // rx buffer
-    uint8_t * rx_buffer;
+    char* rx_buffer;
     unsigned int rx_buffer_size;
     unsigned int rx_count;
     
-    char read_buffer_[4000];
+    static const size_t READ_BUFFER_SIZE=2000;
+    char read_buffer_[READ_BUFFER_SIZE];
 };
 
 

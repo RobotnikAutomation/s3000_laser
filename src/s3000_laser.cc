@@ -106,9 +106,9 @@ public:
 		running = false;
 		private_node_handle_.param("frame_id", frame_id_, string("/laser"));
 		
-		reading.angle_min = DTOR(angle_min_deg);
-		reading.angle_max = DTOR(angle_max_deg);
-		reading.angle_increment = DTOR(angle_increment_deg);
+		reading.angle_min = deg_to_rad(angle_min_deg);
+		reading.angle_max = deg_to_rad(angle_max_deg);
+		reading.angle_increment = deg_to_rad(angle_increment_deg);
 		reading.header.frame_id = frame_id_;
 			
 		self_test_.add("Connect Test", this, &s3000node::ConnectTest);
