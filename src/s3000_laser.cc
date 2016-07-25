@@ -194,38 +194,17 @@ private:
 	}
 	
 	//! Gets the sensor data and publishes 
-	void getData(sensor_msgs::LaserScan& data)
+	void getData(sensor_msgs::LaserScan& scan)
 	{
-		bool bValidData = false;
-
-		laser->ReadLaser( data, bValidData );
-
-		//// If valid data, publish it
-		if (bValidData) {
-			data.header.stamp = ros::Time::now();
-			data.header.frame_id = frame_id_;
+		//// If valid scan, publish it
+		if ( laser->ReadLaser(scan) ) 
+		{
+			scan.header.stamp = ros::Time::now();
+			scan.header.frame_id = frame_id_;
 			if(publish_scan_)	// Publishes only if enabled
-				laser_data_pub_.publish( data );
+				laser_data_pub_.publish( scan );
 			freq_diag_.tick();
 		}
-
-		/*
-		// Robotnik - to test unit
-		if (publish_tf_) {
-		// create a tf message
-		geometry_msgs::TransformStamped imu_trans;
-		imu_trans.header.stamp = data.header.stamp;
-		imu_trans.header.frame_id = "laser";   //odom_frame_id.c_str();
-		imu_trans.child_frame_id = "base_link";
-		imu_trans.transform.translation.x = 0.0;
-		imu_trans.transform.translation.y = 0.0;
-		imu_trans.transform.translation.z = 0.0;
-		imu_trans.transform.rotation = data.orientation;
-		//send the transform
-		imu_broadcaster.sendTransform(imu_trans);
-		}
-		*/  
-
 	}
 
 	//! Updates the diagnostic status

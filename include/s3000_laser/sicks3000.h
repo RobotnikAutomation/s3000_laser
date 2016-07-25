@@ -66,7 +66,7 @@ class SickS3000
     bool Close();
 
     //! Read and process data
-    void ReadLaser( sensor_msgs::LaserScan& scan_msg, bool& bValidData ); // public periodic function
+    bool ReadLaser( sensor_msgs::LaserScan& scan );
   
   private:
 
@@ -90,6 +90,8 @@ class SickS3000
     uint8_t * rx_buffer;
     unsigned int rx_buffer_size;
     unsigned int rx_count;
+    
+    char read_buffer_[4000];
 };
 
 

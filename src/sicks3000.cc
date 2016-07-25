@@ -121,26 +121,31 @@ void SickS3000::SetScannerParams(sensor_msgs::LaserScan& scan, int data_count)
   }
 }
 
-void SickS3000::ReadLaser( sensor_msgs::LaserScan& scan, bool& bValidData ) // public periodic function
+bool SickS3000::ReadLaser( sensor_msgs::LaserScan& scan )
 {
-	int read_bytes=0;			// Number of received bytes
-	char cReadBuffer[4000] = "\0";		// Max in 1 read
+	int bytes_read=0;			// Number of received bytes
 
 	// Read controller messages
-	if (serial.ReadPort(cReadBuffer, 2000, read_bytes)==false) {
+	if (serial.ReadPort(read_buffer_, 2000, bytes_read)==false) 
+	{
 	    ROS_ERROR("SickS3000::ReadLaser: Error reading port");
-	    }
+	    return false;
+    }
 
-	unsigned int messageOffset = rx_count;
-	rx_count += read_bytes;
-	if (rx_count > rx_buffer_size) {
+	if (rx_count + bytes_read > rx_buffer_size) 
+	{
 	   ROS_WARN("S3000 Buffer Full");
 	   rx_count = 0;
-	   }
-	else {
-	   memcpy(&rx_buffer[messageOffset], cReadBuffer, read_bytes);
-	   ProcessLaserData(scan, bValidData);
-	   }
+	   return false;
+    }
+
+   memcpy(&rx_buffer[rx_count], read_buffer_, bytes_read);
+   rx_count += bytes_read;
+
+   bool bValidData=false;
+   ProcessLaserData(scan, bValidData);
+   
+   return bValidData;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
