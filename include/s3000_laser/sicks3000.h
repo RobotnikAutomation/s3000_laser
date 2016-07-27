@@ -69,7 +69,7 @@ class SickS3000
     int ProcessLaserData( sensor_msgs::LaserScan& scan_msg, bool& bValidData ); // public periodic function
 
     // Calculates CRC for a telegram
-    static unsigned short CreateCRC(const char *data, ssize_t len);
+    static unsigned short CreateCRC(const uint8_t *data, ssize_t len);
 
     static bool SetScannerParams(sensor_msgs::LaserScan& scan, int data_count);
 
@@ -81,7 +81,7 @@ class SickS3000
     bool recognisedScanner;
 
     // rx buffer
-    char* rx_buffer;
+    uint8_t* rx_buffer;
     unsigned int rx_buffer_size;
     unsigned int rx_count;
     

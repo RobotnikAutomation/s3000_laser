@@ -41,7 +41,7 @@ SickS3000::SickS3000( std::string port, int baudrate, std::string parity, int da
   rx_count = 0;
   // allocate our recieve buffer
   rx_buffer_size = DEFAULT_RX_BUFFER_SIZE;
-  rx_buffer = new char[rx_buffer_size];
+  rx_buffer = new uint8_t[rx_buffer_size];
   assert(rx_buffer);
 
   recognisedScanner = false;
@@ -207,7 +207,7 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
 
     else
     {
-      char * data = &rx_buffer[20];
+      uint8_t * data = &rx_buffer[20];
       if (data[0] != data[1])
       {
         ROS_WARN("S3000: Bad type header bytes dont match");
@@ -333,7 +333,7 @@ static const unsigned short crc_table[256] =
   0x6e17, 0x7e36, 0x4e55, 0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0
 };
 
-unsigned short SickS3000::CreateCRC(const char *Data, ssize_t length)
+unsigned short SickS3000::CreateCRC(const uint8_t *Data, ssize_t length)
 {
   unsigned short CRC_16 = 0xFFFF;
   unsigned short i;
