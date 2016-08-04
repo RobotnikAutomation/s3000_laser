@@ -2,8 +2,8 @@
 Changelog for package s3000_laser
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2016-08-04)
+------------------
 * Added package to indigo
 * fixed array types
 * cleanup
