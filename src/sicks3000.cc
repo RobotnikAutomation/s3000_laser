@@ -79,7 +79,7 @@ bool SickS3000::SetScannerParams(sensor_msgs::LaserScan& scan, int data_count)
     if (data_count == 761) // sicks3000
     {
         float freq_hz = 16.6;
-
+		
         scan.angle_min          = deg_to_rad(-95);
         scan.angle_max          = deg_to_rad(95);
         scan.angle_increment    = deg_to_rad(0.25);
@@ -229,7 +229,10 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
             continue;
           }
           if (!recognisedScanner)
-            SetScannerParams(scan, data_count); // Set up parameters based on number of results.
+          {
+            // Set up parameters based on number of results.
+			if(SetScannerParams(scan, data_count)) recognisedScanner=true; 
+		  }
 
 	  // Scan data, clear ranges, keep configuration
     	  scan.ranges.clear();

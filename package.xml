@@ -4,22 +4,16 @@
   <version>0.1.0</version>
   <description>The s3000_laser package</description>
 
-  <maintainer email="rnavarro@robotnik.es">Román Navarro</maintainer>
+  <maintainer email="rguzman@robotnik.es">Roberto Guzmán</maintainer>
+  <maintainer email="rnavarro@robotnik.es">Roman Navarro Garcia </maintainer>
+  <maintainer email="aaliques@robotnik.com">Toni Aliques</maintainer>
+  <author email="rnavarro@robotnik.es">Roman Navarro Garcia</author>
 
-
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
   <license>BSD</license>
 
-
   <url type="website">http://wiki.ros.org/s3000_laser</url>
-
-
-  <!-- Author tags are optional, mutiple are allowed, one per tag -->
-  <!-- Authors do not have to be maintianers, but could be -->
-  <!-- Example: -->
-  <author email="rnavarro@robotnik.es">Román Navarro</author>
+  <url type="repository">https://github.com/RobotnikAutomation/s3000_laser.git</url>
+  <url type="bugtracker">https://github.com/RobotnikAutomation/s3000_laser/issues</url>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
@@ -38,7 +32,6 @@
   <run_depend>diagnostic_msgs</run_depend>
   <run_depend>diagnostic_updater</run_depend>
 
-  <!-- The export tag contains other, unspecified, tags -->
   <export>
 
   </export>

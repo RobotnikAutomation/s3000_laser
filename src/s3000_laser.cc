@@ -90,7 +90,7 @@ public:
 	    float angle_min_deg, angle_max_deg, angle_increment_deg;
 	    
 		ros::NodeHandle laser_node_handle(node_handle_, "s3000_laser");
-		private_node_handle_.param("port", port, string("/dev/ttyUSB1"));
+		private_node_handle_.param("port", port, string("/dev/ttyUSB0"));
 		private_node_handle_.param("baud_rate", baud_rate, 500000);
 		private_node_handle_.param<float>("range_min", reading.range_min, 0 );
 		private_node_handle_.param<float>("range_max", reading.range_max, 40 );
