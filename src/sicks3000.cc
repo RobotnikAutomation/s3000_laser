@@ -275,7 +275,7 @@ int SickS3000::ProcessLaserData(sensor_msgs::LaserScan& scan, bool& bValidData)
                 ROS_DEBUG("reflector %lu: angle=%.2fdeg distance=%.2fm", i, raw_angle*0.01, raw_dist*0.01 );
 
                 float scan_angle = scan.angle_max - deg_to_rad(raw_angle*0.01);
-                int range_idx = ( scan_angle - scan.angle_min ) / scan.angle_increment;
+                int range_idx = ( scan.angle_max - scan_angle ) / scan.angle_increment;
 
                 if ( range_idx >= 0 && range_idx < scan.ranges.size() ) scan.ranges[range_idx] = raw_dist*0.01;
                 else ROS_WARN("invalid reflector angle=%.2frad, idx=%d/%lu", scan_angle, range_idx, scan.ranges.size() );
