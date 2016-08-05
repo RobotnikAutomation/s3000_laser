@@ -1,10 +1,13 @@
 <?xml version="1.0"?>
-<launch>
-  <arg name="port" default="/dev/ttyUSB1" />
 
-  <!-- param name="publish_tf" value="true" / -->
+<launch>
+  <arg name="port" default="/dev/ttyUSB0" />
+
   <node pkg="s3000_laser" type="s3000_laser_node" name="s3000_laser_node" output="screen">
   	<param name="port" value="$(arg port)" type="string"/>
     <param name="frame_id" value="/laser_base" type="string"/>
+    <!--param name="range_min" value="0" type="double"/>
+    <param name="range_max" value="40" type="double"/-->
   </node>
+
 </launch>
